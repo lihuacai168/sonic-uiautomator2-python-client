@@ -1,15 +1,12 @@
 # !/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-# @Author: 花菜
-# @File: http_client.py
-# @Time : 2023/6/1 16:44
-# @Email: lihuacai168@gmail.com
 import json
 
 import requests
+from requests import Response
 
-from models import BaseResp, ErrorMsg, Method
+from common.models import BaseResp, ErrorMsg, Method
 
 
 class HttpRequest:
@@ -19,14 +16,14 @@ class HttpRequest:
         self.url = url
         self.headers = headers
         self.params = params
-        self.body = body
+        self._body = body
 
     def body(self, body):
-        self.body = json.loads(body) if isinstance(body, str) else body
+        self._body = json.loads(body) if isinstance(body, str) else body
         return self
 
-    def send(self, timeout) -> BaseResp:
-        return HttpUtil.create_request(self.method, self.url,  timeout, self.headers, self.params, self.body)
+    def send(self, timeout) -> Response:
+        return HttpUtil.create_request(self.method, self.url,  timeout, self.headers, self.params, self._body)
 
 
 class HttpUtil:
@@ -52,23 +49,23 @@ class HttpUtil:
         return HttpRequest(Method.PATCH, url, headers)
 
     @staticmethod
-    def create_request(method: Method, url: str, timeout: float, headers=None, params=None, body=None) -> BaseResp:
+    def create_request(method: Method, url: str, timeout: float, headers=None, params=None, body=None) -> Response:
         if headers is None:
             headers = {'Content-Type': 'application/json'}
         if isinstance(body, str):
             body = json.loads(body)
 
         response = requests.request(method.value, url, timeout=timeout, headers=headers, params=params, data=json.dumps(body))
-        return HttpUtil._handle_response(response)
+        return response
 
-    @staticmethod
-    def _handle_response(response: requests.Response) -> BaseResp:
-        if response.status_code >= 400:
-            err = ErrorMsg(error=str(response.status_code), message=response.text, traceback="")
-        else:
-            err = None
-        try:
-            value = response.json()
-        except ValueError:
-            value = response.text
-        return BaseResp(session_id="", err=err, value=value)
+    # @staticmethod
+    # def _handle_response(response: requests.Response) -> BaseResp:
+    #     if response.status_code >= 400:
+    #         err = ErrorMsg(error=str(response.status_code), message=response.text, traceback="")
+    #     else:
+    #         err = None
+    #     try:
+    #         value = response.json()
+    #     except ValueError:
+    #         value = response.text
+    #     return BaseResp(session_id="", err=err, value=value)
